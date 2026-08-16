@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
   wireCatalog();
   wireCourses();
   wireMethods();
-  wireVocabulary();
+  wireNotebook();
   wireSettings();
   wireModals();
   wireSearch();
@@ -54,7 +54,7 @@ function fullRender(){
   renderCatalog();
   renderCourses();
   renderMethods();
-  renderVocabulary();
+  renderNotebook();
   renderProgress();
   renderSettings();
 }
@@ -172,7 +172,7 @@ function switchView(view){
   // re-render sob demanda
   const renderers = { today: renderToday, week: renderWeek, languages: renderLanguages,
     catalog: renderCatalog, courses: renderCourses, methods: renderMethods,
-    vocabulary: renderVocabulary, progress: renderProgress, settings: renderSettings };
+    notebook: renderNotebook, progress: renderProgress, settings: renderSettings };
   if (renderers[view]) renderers[view]();
 }
 
@@ -783,33 +783,63 @@ function renderLanguageSkillContent(){
 /* ============================================================
    CATÁLOGO
 ============================================================= */
+let editingResourceId = null;
 function wireCatalog(){
   ["filter-language","filter-skill","filter-type","filter-menu","filter-status"].forEach(id =>
     $("#"+id).addEventListener("change", renderCatalog));
   $("#filter-search").addEventListener("input", renderCatalog);
-  $("#btn-add-content").addEventListener("click", () => { fillSelectWithLanguages($("#ac-language")); openModal("add-content-modal"); });
+  $("#btn-add-content").addEventListener("click", () => openContentModal(null));
   $("#add-content-form").addEventListener("submit", (e) => {
     e.preventDefault();
-    Store.add("resources", {
-      name: $("#ac-name").value, url: $("#ac-url").value, category: "custom",
+    const data = {
+      name: $("#ac-name").value, url: $("#ac-url").value,
       language: $("#ac-language").value, skill: $("#ac-skill").value, type: $("#ac-type").value,
       duration: parseInt($("#ac-duration").value,10)||15, level: $("#ac-level").value, menu: $("#ac-menu").value,
       activePassive: $("#ac-active").value, tags: $("#ac-tags").value.split(",").map(t=>t.trim()).filter(Boolean),
-      notes: $("#ac-notes").value, status: $("#ac-status").value, progress: 0
-    });
+      notes: $("#ac-notes").value, status: $("#ac-status").value
+    };
+    if (editingResourceId) {
+      Store.update("resources", editingResourceId, data);
+      toast("Conteúdo atualizado!");
+    } else {
+      Store.add("resources", { ...data, category: "custom", progress: 0 });
+      toast("Conteúdo adicionado ao catálogo!");
+    }
+    editingResourceId = null;
     e.target.reset();
     closeModal("add-content-modal");
-    toast("Conteúdo adicionado ao catálogo!");
     renderCatalog();
   });
+}
+function openContentModal(resource){
+  fillSelectWithLanguages($("#ac-language"));
+  editingResourceId = resource ? resource.id : null;
+  $("#add-content-title").textContent = resource ? `Editar — ${resource.name}` : "+ Novo conteúdo";
+  if (resource) {
+    $("#ac-name").value = resource.name || "";
+    $("#ac-url").value = resource.url || "";
+    $("#ac-language").value = resource.language || "";
+    $("#ac-skill").value = resource.skill || "listening";
+    $("#ac-type").value = resource.type || "site";
+    $("#ac-duration").value = resource.duration || 15;
+    $("#ac-level").value = resource.level || "";
+    $("#ac-menu").value = resource.menu || "snack";
+    $("#ac-active").value = resource.activePassive || "ativo";
+    $("#ac-tags").value = (resource.tags||[]).join(", ");
+    $("#ac-notes").value = resource.notes || "";
+    $("#ac-status").value = resource.status || "não iniciado";
+  } else {
+    $("#add-content-form").reset();
+  }
+  openModal("add-content-modal");
 }
 function populateLanguageFilterOptions(){
   const sel = $("#filter-language");
   const existing = new Set($$("#filter-language option").map(o=>o.value));
   Store.getAll("languages").forEach(l => { if (!existing.has(l.id)) sel.appendChild(el("option",{value:l.id}, `${l.flag} ${l.name}`)); });
-  const vsel = $("#vocab-filter-language");
-  const existingV = new Set($$("#vocab-filter-language option").map(o=>o.value));
-  Store.getAll("languages").forEach(l => { if (!existingV.has(l.id)) vsel.appendChild(el("option",{value:l.id}, `${l.flag} ${l.name}`)); });
+  const nsel = $("#note-filter-language");
+  const existingN = new Set($$("#note-filter-language option").map(o=>o.value));
+  Store.getAll("languages").forEach(l => { if (!existingN.has(l.id)) nsel.appendChild(el("option",{value:l.id}, `${l.flag} ${l.name}`)); });
 }
 function renderCatalog(){
   populateLanguageFilterOptions();
@@ -836,8 +866,18 @@ function renderResourceCard(r){
     el("div", { class:"tag-row" }, (r.tags||[]).map(t => el("span", { class:"tag-chip" }, "#"+t))),
     r.notes ? el("p", { class:"muted" }, r.notes) : null,
     r.url ? el("a", { href:r.url, target:"_blank", rel:"noopener", class:"btn btn-secondary" }, "Abrir ↗") : el("p", { class:"muted" }, "Sem link cadastrado ainda."),
-    statusSel
+    statusSel,
+    el("div", { class:"modal-actions" }, [
+      el("button", { class:"btn btn-secondary", onclick: () => openContentModal(r) }, "✏️ Editar"),
+      el("button", { class:"btn btn-danger", onclick: () => deleteResource(r.id, r.name) }, "🗑️ Excluir")
+    ])
   ]);
+}
+function deleteResource(id, name){
+  if (!confirm(`Remover "${name}" do catálogo? Isso não pode ser desfeito.`)) return;
+  Store.remove("resources", id);
+  toast("Removido do catálogo.");
+  renderCatalog();
 }
 
 /* ============================================================
@@ -858,12 +898,21 @@ function renderCourses(){
       el("p", {}, `Última aula: ${c.lastLesson||"—"}`),
       el("p", {}, `Próxima aula: ${c.nextLesson||"—"}`),
       c.notes ? el("p", { class:"muted" }, c.notes) : null,
+      c.url ? null : el("p", { class:"muted" }, "Sem link cadastrado ainda."),
       el("div", { class:"modal-actions" }, [
         el("button", { class:"btn btn-secondary", onclick: () => markCourseProgress(c.id) }, "+ Marcar aula concluída"),
+        el("button", { class:"btn btn-secondary", onclick: () => editCourseUrl(c) }, "✏️ Editar link"),
         c.url ? el("a", { href:c.url, target:"_blank", rel:"noopener", class:"btn btn-secondary" }, "Abrir ↗") : null
       ])
     ]));
   });
+}
+function editCourseUrl(course){
+  const newUrl = window.prompt(`Link para "${course.name}" (deixe em branco pra remover):`, course.url || "");
+  if (newUrl === null) return; // cancelado
+  Store.update("courses", course.id, { url: newUrl.trim() });
+  toast("Link do curso atualizado!");
+  renderCourses();
 }
 function markCourseProgress(courseId){
   const c = Store.getById("courses", courseId);
@@ -915,59 +964,78 @@ function renderMethodCard(m, compact){
 }
 
 /* ============================================================
-   VOCABULÁRIO
+   CADERNO — anotações de gramática/dicas (vocabulário fica no Anki)
 ============================================================= */
-function wireVocabulary(){
-  ["vocab-filter-language","vocab-filter-category","vocab-filter-status"].forEach(id => $("#"+id).addEventListener("change", renderVocabulary));
-  $("#vocab-filter-search").addEventListener("input", renderVocabulary);
-  $("#btn-add-vocab").addEventListener("click", () => {
-    fillSelectWithLanguages($("#av-language"));
-    const catSel = $("#av-category"); catSel.innerHTML = "";
-    Store.getAll("vocabularyCategories").forEach(c => catSel.appendChild(el("option", { value:c.id }, c.name)));
-    openModal("add-vocab-modal");
-  });
-  $("#add-vocab-form").addEventListener("submit", (e) => {
+let editingNoteId = null;
+const NOTE_TYPE_LABEL = { gramatica:"📚 Gramática", dica:"💡 Dica", outro:"📝 Outro" };
+function wireNotebook(){
+  ["note-filter-language","note-filter-type"].forEach(id => $("#"+id).addEventListener("change", renderNotebook));
+  $("#note-filter-search").addEventListener("input", renderNotebook);
+  $("#btn-add-note").addEventListener("click", () => openNoteModal(null));
+  $("#add-note-form").addEventListener("submit", (e) => {
     e.preventDefault();
-    Store.add("vocabulary", {
-      term: $("#av-term").value, translation: $("#av-translation").value, definition: $("#av-definition").value,
-      example: $("#av-example").value, professionalPhrase: $("#av-professional").value, dailyPhrase: $("#av-daily").value,
-      language: $("#av-language").value, category: $("#av-category").value, level: $("#av-level").value,
-      activePassive: $("#av-active").value, tags: $("#av-tags").value.split(",").map(t=>t.trim()).filter(Boolean)
-    });
+    const data = {
+      title: $("#an-title").value, language: $("#an-language").value, type: $("#an-type").value,
+      content: $("#an-content").value, tags: $("#an-tags").value.split(",").map(t=>t.trim()).filter(Boolean)
+    };
+    if (editingNoteId) {
+      Store.update("notes", editingNoteId, data);
+      toast("Anotação atualizada!");
+    } else {
+      Store.add("notes", data);
+      toast("Anotação salva!");
+    }
+    editingNoteId = null;
     e.target.reset();
-    closeModal("add-vocab-modal");
-    toast("Vocabulário adicionado!");
-    renderVocabulary();
+    closeModal("add-note-modal");
+    renderNotebook();
+  });
+  $("#an-delete").addEventListener("click", () => {
+    if (!editingNoteId) return;
+    if (!confirm("Excluir esta anotação? Isso não pode ser desfeito.")) return;
+    Store.remove("notes", editingNoteId);
+    editingNoteId = null;
+    closeModal("add-note-modal");
+    toast("Anotação excluída.");
+    renderNotebook();
   });
 }
-function renderVocabulary(){
-  populateLanguageFilterOptions();
-  const catSel = $("#vocab-filter-category");
-  if (!catSel.dataset.filled) {
-    catSel.appendChild(el("option", { value:"all" }, "Categoria: Todas"));
-    Store.getAll("vocabularyCategories").forEach(c => catSel.appendChild(el("option", { value:c.id }, c.name)));
-    catSel.dataset.filled = "1";
+function openNoteModal(note){
+  fillSelectWithLanguages($("#an-language"));
+  editingNoteId = note ? note.id : null;
+  $("#add-note-title").textContent = note ? "Editar anotação" : "+ Nova anotação";
+  $("#an-delete").hidden = !note;
+  if (note) {
+    $("#an-title").value = note.title || "";
+    $("#an-language").value = note.language || "";
+    $("#an-type").value = note.type || "gramatica";
+    $("#an-content").value = note.content || "";
+    $("#an-tags").value = (note.tags||[]).join(", ");
+  } else {
+    $("#add-note-form").reset();
   }
-  const lang = $("#vocab-filter-language").value, cat = $("#vocab-filter-category").value,
-    status = $("#vocab-filter-status").value, q = $("#vocab-filter-search").value.toLowerCase();
-  const list = $("#vocabulary-list");
+  openModal("add-note-modal");
+}
+function renderNotebook(){
+  populateLanguageFilterOptions();
+  const lang = $("#note-filter-language").value, type = $("#note-filter-type").value,
+    q = $("#note-filter-search").value.toLowerCase();
+  const list = $("#notebook-list");
   list.innerHTML = "";
-  const items = Store.getAll("vocabulary").filter(v =>
-    (lang==="all"||v.language===lang) && (cat==="all"||v.category===cat) && (status==="all"||v.activePassive===status) &&
-    (!q || v.term.toLowerCase().includes(q) || (v.translation||"").toLowerCase().includes(q) || (v.tags||[]).join(" ").toLowerCase().includes(q))
+  const items = Store.getAll("notes").filter(n =>
+    (lang==="all"||n.language===lang) && (type==="all"||n.type===type) &&
+    (!q || n.title.toLowerCase().includes(q) || (n.content||"").toLowerCase().includes(q) || (n.tags||[]).join(" ").toLowerCase().includes(q))
   );
-  if (!items.length) list.appendChild(el("p", { class:"muted" }, "Nenhum item encontrado."));
-  items.forEach(v => list.appendChild(el("div", { class:"vocab-card" }, [
-    el("div", { class:"vocab-term" }, v.term),
-    el("div", { class:"vocab-translation" }, v.translation),
-    v.example ? el("div", { class:"vocab-example" }, `"${v.example}"`) : null,
-    v.professionalPhrase ? el("div", {}, [el("div",{class:"vocab-phrase-label"},"Profissional"), el("div",{}, v.professionalPhrase)]) : null,
-    v.dailyPhrase ? el("div", {}, [el("div",{class:"vocab-phrase-label"},"Cotidiano"), el("div",{}, v.dailyPhrase)]) : null,
-    el("div", { class:"tag-row" }, [
-      el("span", { class:"tag-chip" }, v.activePassive === "ativo" ? "#ativo" : "#passivo"),
-      ...(v.tags||[]).map(t => el("span", { class:"tag-chip" }, "#"+t))
-    ])
-  ])));
+  if (!items.length) list.appendChild(el("p", { class:"muted" }, "Nenhuma anotação ainda — clique em \"+ Nova anotação\" pra começar."));
+  items.forEach(n => {
+    const lg = Store.getById("languages", n.language);
+    list.appendChild(el("div", { class:"note-card", onclick: () => openNoteModal(n) }, [
+      el("div", { class:"resource-meta" }, [ el("span",{}, NOTE_TYPE_LABEL[n.type]||n.type), lg?el("span",{}, `${lg.flag} ${lg.name}`):null ]),
+      el("h4", {}, n.title),
+      n.content ? el("p", { class:"note-content" }, n.content) : null,
+      el("div", { class:"tag-row" }, (n.tags||[]).map(t => el("span", { class:"tag-chip" }, "#"+t)))
+    ]));
+  });
 }
 
 /* ============================================================
@@ -1000,7 +1068,7 @@ function renderProgress(){
   const totalsData = {
     "Sessões concluídas": completed.length,
     "Minutos totais": completed.reduce((a,s)=>a+(parseInt(s.duration,10)||0),0),
-    "Palavras/chunks salvos": Store.getAll("vocabulary").length,
+    "Anotações no caderno": Store.getAll("notes").length,
     "Aulas de curso concluídas": Store.getAll("courses").reduce((a,c)=>a+(c.modules||[]).reduce((b,m)=>b+m.lessons.filter(l=>l.status==="concluído").length,0),0),
     "Sessões de roleplay": completed.filter(s=>s.method==="roleplay").length,
     "Sessões de shadowing": completed.filter(s=>s.method==="shadowing").length
@@ -1245,7 +1313,7 @@ function renderSearchResults(query){
   const q = query.trim().toLowerCase();
   if (!q) return;
   const matches = [];
-  Store.getAll("vocabulary").forEach(v => { if ((v.term+" "+v.translation+" "+(v.tags||[]).join(" ")).toLowerCase().includes(q)) matches.push({ type:"Vocabulário", label:v.term }); });
+  Store.getAll("notes").forEach(n => { if ((n.title+" "+(n.content||"")+" "+(n.tags||[]).join(" ")).toLowerCase().includes(q)) matches.push({ type:"Caderno", label:n.title }); });
   Store.getAll("resources").forEach(r => { if ((r.name+" "+(r.tags||[]).join(" ")).toLowerCase().includes(q)) matches.push({ type:"Catálogo", label:r.name }); });
   Store.getAll("courses").forEach(c => { if (c.name.toLowerCase().includes(q)) matches.push({ type:"Curso", label:c.name }); });
   Store.getAll("methods").forEach(m => { if ((m.name+" "+m.concept).toLowerCase().includes(q)) matches.push({ type:"Método", label:m.name }); });

@@ -313,23 +313,16 @@ label{ font-size: .85rem; font-weight: 600; color: var(--text-muted); display:bl
 .progress-track{ height:7px; border-radius:999px; background: var(--surface-alt); overflow:hidden; }
 .progress-fill{ height:100%; background: var(--progress); }
 
-/* ---------------- Vocabulary ---------------- */
-.fcl-banner{
-  background: linear-gradient(135deg, var(--entrada-soft), var(--prato-soft));
-  border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 14px;
-  border: 1px solid var(--border);
-}
-.fcl-banner h3{ margin:0 0 2px; }
-.fcl-banner p{ margin:0; font-size:.85rem; color: var(--text-muted); }
-.vocabulary-list{ display:grid; gap: 10px; }
-.vocab-card{
+/* ---------------- Caderno (anotações) ---------------- */
+.notebook-list{ display:grid; gap: 10px; }
+.note-card{
   background: var(--surface); border-radius: var(--radius-md); padding: 14px 16px;
-  border:1px solid var(--border); box-shadow: var(--shadow-sm);
+  border:1px solid var(--border); box-shadow: var(--shadow-sm); cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
 }
-.vocab-term{ font-weight:800; font-size:1.05rem; }
-.vocab-translation{ color: var(--text-muted); font-size:.88rem; }
-.vocab-example{ font-style: italic; font-size:.88rem; margin-top:4px; }
-.vocab-phrase-label{ font-weight:700; font-size:.76rem; text-transform:uppercase; color: var(--text-muted); margin-top:6px; }
+.note-card:hover{ transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.note-card h4{ margin: 4px 0 6px; }
+.note-content{ white-space: pre-wrap; font-size:.9rem; color: var(--text); margin: 0 0 8px; }
 
 /* ---------------- Progress ---------------- */
 .progress-compare{ display:grid; gap:10px; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); margin-bottom:16px; }

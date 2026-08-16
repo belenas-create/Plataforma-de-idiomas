@@ -9,14 +9,14 @@
 
    Coleções (modelo de dados lógico — item #45 do briefing):
      languages, study_sessions, weekly_plans, resources, courses,
-     methods, vocabulary, goals, tags, notebooks, settings, badges_unlocked
+     methods, notes, goals, tags, notebooks, settings, badges_unlocked
    ========================================================================== */
 
 const Store = (() => {
   const NAMESPACE = "langplatform_v1";
   const COLLECTIONS = [
     "languages", "studySessions", "weeklyPlans", "resources", "courses",
-    "methods", "vocabulary", "vocabularyCategories", "tags", "notebooks",
+    "methods", "notes", "tags", "notebooks",
     "goals", "badgesUnlocked", "settings"
   ];
 
@@ -62,9 +62,8 @@ const Store = (() => {
     db.courses = loadCollection("courses") || SEED_DATA.courses;
     // métodos
     db.methods = loadCollection("methods") || SEED_DATA.methods;
-    // vocabulário
-    db.vocabulary = loadCollection("vocabulary") || SEED_DATA.vocabulary;
-    db.vocabularyCategories = loadCollection("vocabularyCategories") || SEED_DATA.vocabularyCategories;
+    // caderno de anotações (gramática, dicas — vocabulário fica no Anki, fora da plataforma)
+    db.notes = loadCollection("notes") || SEED_DATA.notes || [];
     // tags
     db.tags = loadCollection("tags") || SEED_DATA.tags;
     // notebooks

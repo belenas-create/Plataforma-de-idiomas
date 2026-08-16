@@ -1,0 +1,7 @@
+name = "professor-ia-proxy"
+main = "openai-proxy-worker.js"
+compatibility_date = "2025-01-01"
+
+# Depois de publicar (wrangler deploy), configure a chave secreta com:
+#   wrangler secret put OPENAI_API_KEY
+# (ela NUNCA vai neste arquivo nem em nenhum arquivo do repositório)

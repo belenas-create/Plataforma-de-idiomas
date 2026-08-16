@@ -191,7 +191,7 @@ const SEED_DATA = {
       id: "mairo-vergara",
       name: "Mairo Vergara",
       language: "english",
-      url: "",
+      url: "https://www.mairovergara.com/",
       tags: ["curso", "english", "prato-principal"],
       modules: [
         { id: "mv-m1", name: "Módulo 1", lessons: [
@@ -210,7 +210,7 @@ const SEED_DATA = {
       id: "ingles-sem-neura",
       name: "Inglês Sem Neura",
       language: "english",
-      url: "",
+      url: "https://inglessemneura.com.br/",
       tags: ["curso", "english", "prato-principal"],
       modules: [
         { id: "isn-m1", name: "Fundamentos", lessons: [
@@ -289,43 +289,24 @@ const SEED_DATA = {
   ],
 
   /* ---------------------------------------------------------------------
-   * VOCABULÁRIO — inclui a seção especial FCL/IMPO/Customer Service/Pricing
+   * CADERNO — anotações de gramática/dicas (vocabulário fica no Anki,
+   * fora da plataforma, então não existe uma coleção de vocabulário aqui)
    * ------------------------------------------------------------------- */
-  vocabulary: [
-    { id: "v1", term: "shipment", translation: "embarque / carregamento", definition: "A batch of goods sent together.", example: "The shipment left the port yesterday.", professionalPhrase: "Could you confirm the status of the shipment?", dailyPhrase: "", language: "english", category: "fcl-impo", level: "B1", activePassive: "ativo", tags: ["fcl","customer-service","professional"] },
-    { id: "v2", term: "demurrage", translation: "sobrestadia", definition: "A charge for keeping a container at the port beyond the free time.", example: "We were charged demurrage because the container stayed 3 extra days.", professionalPhrase: "The demurrage charges will apply after the free time expires.", dailyPhrase: "", language: "english", category: "fcl-impo", level: "B2", activePassive: "passivo", tags: ["fcl","pricing","logistics"] },
-    { id: "v3", term: "meet the deadline", translation: "cumprir o prazo", definition: "To finish something by the agreed date.", example: "We need to meet the deadline for the customs documentation.", professionalPhrase: "Are we still on track to meet the deadline?", dailyPhrase: "I need to meet the deadline for my report.", language: "english", category: "customer-service", level: "B1", activePassive: "ativo", tags: ["chunk","professional","customer-service"] },
-    { id: "v4", term: "quotation / quote", translation: "cotação", definition: "A formal statement of the estimated price for a service.", example: "Could you send me a quotation for a 40' container to Santos?", professionalPhrase: "I'd like to request a quote for FCL shipment.", dailyPhrase: "", language: "english", category: "pricing", level: "B1", activePassive: "ativo", tags: ["pricing","fcl"] },
-    { id: "v5", term: "transit time", translation: "tempo de trânsito", definition: "The time it takes for cargo to travel from origin to destination.", example: "What's the transit time from Shanghai to Santos?", professionalPhrase: "The transit time is approximately 30 days.", dailyPhrase: "", language: "english", category: "logistics", level: "B1", activePassive: "ativo", tags: ["logistics","fcl"] },
-    { id: "v6", term: "Incoterms", translation: "Incoterms (termos internacionais de comércio)", definition: "Standardized trade terms that define responsibilities between buyer and seller.", example: "Which Incoterm are we using for this shipment — FOB or CIF?", professionalPhrase: "Please confirm the Incoterm before we proceed.", dailyPhrase: "", language: "english", category: "fcl-impo", level: "B2", activePassive: "passivo", tags: ["fcl","impo","documentation"] },
-    { id: "v7", term: "booking", translation: "reserva de espaço", definition: "A confirmed reservation of space on a vessel.", example: "The booking was confirmed for next Friday's vessel.", professionalPhrase: "Could you send me the booking confirmation?", dailyPhrase: "", language: "english", category: "logistics", level: "B1", activePassive: "ativo", tags: ["fcl","logistics"] },
-    { id: "v8", term: "Bill of Lading (BL)", translation: "conhecimento de embarque", definition: "A legal document issued by the carrier confirming receipt of cargo for shipment.", example: "We need the original Bill of Lading to release the cargo.", professionalPhrase: "Has the BL been issued yet?", dailyPhrase: "", language: "english", category: "documentation", level: "B2", activePassive: "passivo", tags: ["fcl","impo","documentation"] },
-    { id: "v9", term: "follow up on something", translation: "dar continuidade / cobrar retorno", definition: "To check the progress of something previously discussed.", example: "I'm following up on the quotation I sent last week.", professionalPhrase: "I just wanted to follow up on my previous email.", dailyPhrase: "I'll follow up with you next week.", language: "english", category: "emails", level: "B1", activePassive: "ativo", tags: ["chunk","emails","professional"] },
-    { id: "v10", term: "customer complaint", translation: "reclamação de cliente", definition: "A formal expression of dissatisfaction from a client.", example: "We received a customer complaint about the delayed shipment.", professionalPhrase: "I understand your frustration — let me look into this complaint right away.", dailyPhrase: "", language: "english", category: "customer-service", level: "B1", activePassive: "ativo", tags: ["customer-service","professional"] },
-    { id: "v11", term: "small talk", translation: "conversa fiada / bate-papo", definition: "Light, casual conversation about unimportant topics.", example: "We made some small talk before the meeting started.", professionalPhrase: "", dailyPhrase: "I'm not great at small talk with strangers.", language: "english", category: "small-talk", level: "A2", activePassive: "ativo", tags: ["small-talk","daily"] },
-    { id: "v12", term: "How's it going?", translation: "Como vai?", definition: "Casual greeting.", example: "Hey! How's it going?", professionalPhrase: "", dailyPhrase: "How's it going? Long time no see!", language: "english", category: "small-talk", level: "A1", activePassive: "ativo", tags: ["small-talk","daily","chunk"] },
-    { id: "v13", term: "freight", translation: "frete", definition: "Goods transported, or the cost of transporting them.", example: "The freight cost increased due to fuel surcharges.", professionalPhrase: "Can you break down the freight cost for this route?", dailyPhrase: "", language: "english", category: "fcl-impo", level: "B1", activePassive: "ativo", tags: ["fcl","pricing"] },
-    { id: "v14", term: "vessel / vessel schedule", translation: "navio / cronograma de navios", definition: "The ship, or its planned route/timing.", example: "The next vessel departs on the 15th.", professionalPhrase: "Could you send me the vessel schedule for next month?", dailyPhrase: "", language: "english", category: "logistics", level: "B1", activePassive: "passivo", tags: ["fcl","logistics"] },
-    { id: "v15", term: "free time", translation: "prazo livre (antes de multa)", definition: "The period a container can be used/held before extra charges apply.", example: "We have 7 days of free time at the destination port.", professionalPhrase: "How many days of free time do we have before demurrage applies?", dailyPhrase: "", language: "english", category: "pricing", level: "B2", activePassive: "passivo", tags: ["fcl","pricing"] }
-  ],
-
-  /* ---------------------------------------------------------------------
-   * CATEGORIAS FIXAS DE VOCABULÁRIO (para os filtros)
-   * ------------------------------------------------------------------- */
-  vocabularyCategories: [
-    { id: "daily-english", name: "Inglês cotidiano" },
-    { id: "professional-english", name: "Inglês profissional" },
-    { id: "fcl-impo", name: "FCL / IMPO" },
-    { id: "customer-service", name: "Customer Service" },
-    { id: "pricing", name: "Pricing" },
-    { id: "logistics", name: "Logistics" },
-    { id: "meetings", name: "Meetings" },
-    { id: "emails", name: "Emails" },
-    { id: "negotiation", name: "Negotiation" },
-    { id: "small-talk", name: "Small Talk" },
-    { id: "travel", name: "Travel" },
-    { id: "documentation", name: "Documentation" },
-    { id: "general-english", name: "General English" }
+  notes: [
+    {
+      id: "note-present-perfect",
+      title: "Present Perfect x Simple Past",
+      language: "english", type: "gramatica",
+      content: "Simple Past: ação terminada, tempo específico no passado (\"I sent the email yesterday\").\nPresent Perfect: ação sem tempo específico, ou que ainda conecta com o presente (\"I have already sent the email\" / \"Have you sent the invoice yet?\").\nNo trabalho: use Present Perfect pra falar de algo que já aconteceu e ainda importa agora (\"The shipment has arrived\"), e Simple Past pra contar uma sequência de fatos passados (\"We booked the container, loaded it, and shipped it last week\").",
+      tags: ["present-perfect","simple-past","verbos"]
+    },
+    {
+      id: "note-for-since",
+      title: "for vs since",
+      language: "english", type: "dica",
+      content: "\"for\" + duração (\"for 3 years\", \"for two weeks\").\n\"since\" + ponto de partida (\"since 2020\", \"since Monday\").\nErro comum: \"since 3 years\" está errado — o certo é \"for 3 years\".",
+      tags: ["for","since","preposições"]
+    }
   ],
 
   /* ---------------------------------------------------------------------

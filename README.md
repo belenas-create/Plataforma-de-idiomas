@@ -18,13 +18,17 @@ language-platform/
 ├── index.html          → aplicativo principal (dashboard, planner, catálogo...)
 ├── style.css
 ├── app.js               → toda a lógica do dashboard
-├── data.js               → dados iniciais/seed (idiomas, métodos, cursos, catálogo, vocabulário)
+├── data.js               → dados iniciais/seed (idiomas, métodos, cursos, catálogo, caderno)
 ├── store.js              → camada de dados (hoje: localStorage; futuro: Firestore)
 │
 ├── speaking/
 │   ├── speaking.html     → Professor IA (app INDEPENDENTE, abre em nova aba)
 │   ├── speaking.css
 │   └── speaking.js
+│
+├── backend/
+│   ├── openai-proxy-worker.js → proxy seguro pro Professor IA usar IA real (OpenAI)
+│   └── wrangler.toml           → config do Cloudflare Worker
 │
 ├── firebase/
 │   └── config.example.js → modelo de configuração do Firebase (copie para config.js)
@@ -62,8 +66,7 @@ npx serve .
 | `resources` | Catálogo de conteúdos (cursos, sites, YouTube, apps, TikTok...) |
 | `courses` | Cursos com módulos/aulas e progresso |
 | `methods` | Métodos de estudo (Chunks, Shadowing, Roleplay, Anki, etc.) — extensível |
-| `vocabulary` | Palavras/chunks com tradução, exemplos, frases profissionais/cotidianas, tags |
-| `vocabularyCategories` | Categorias de vocabulário (FCL/IMPO, Customer Service, Pricing...) |
+| `notes` | Caderno de anotações (gramática, dicas) — vocabulário fica no Anki, fora da plataforma |
 | `tags` | Lista de tags disponíveis (extensível pelo usuário) |
 | `notebooks` | Atalhos para NotebookLM |
 | `goals` | Metas diárias/semanais/por habilidade |
@@ -88,17 +91,35 @@ Até que isso esteja configurado, a plataforma mostra o aviso "💾 Modo local a
 
 Por padrão, o Professor IA (`speaking/speaking.js`) roda em **modo simulado**: respostas geradas por roteiros de cenário + regras locais, deixado bem claro na interface ("🧪 Modo simulado (offline)"). Isso evita fingir uma IA que não existe.
 
-Para conectar um modelo de IA real (ex: Claude, GPT):
+**Importante sobre contas:** a assinatura do ChatGPT (chatgpt.com) é um produto diferente da API da OpenAI (platform.openai.com) — mesmo pagando o ChatGPT Plus, isso não dá acesso à API. A boa notícia é que ambos usam o **mesmo login/conta OpenAI**: você só precisa entrar em [platform.openai.com](https://platform.openai.com), ativar cobrança por uso ali (separada da assinatura do ChatGPT) e gerar uma chave de API. O uso é cobrado por token/minuto consumido, não por mensalidade fixa.
 
-1. **Nunca** coloque a chave de API da IA no frontend.
-2. Crie um backend simples (proxy) — pode ser uma função serverless (Cloudflare Workers, Vercel Functions, Firebase Cloud Functions, etc.) que:
-   - Recebe `POST { messages, language, level, mode, conversationMode, scenario }`.
-   - Chama a API da IA usando a chave guardada como variável de ambiente do servidor.
-   - Responde `{ reply: "texto da IA" }`.
-3. Em `speaking/speaking.js`, preencha `AI_CONFIG.endpoint` com a URL pública desse backend.
-4. Pronto — o app passa a usar respostas reais automaticamente, com fallback para o modo simulado se a chamada falhar.
+Este projeto já vem com o backend pronto em `backend/openai-proxy-worker.js` — um Cloudflare Worker que protege sua chave (ela nunca fica no frontend nem no GitHub). Passo a passo:
 
-Arquitetura: **Frontend → API segura (seu backend) → modelo de IA**. A chave nunca trafega até o navegador do usuário.
+1. Crie uma chave de API em [platform.openai.com/api-keys](https://platform.openai.com/api-keys) (com billing ativado na conta).
+2. Instale a CLI da Cloudflare e faça login:
+   ```bash
+   npm install -g wrangler
+   wrangler login
+   ```
+3. Dentro da pasta `backend/`, publique o Worker:
+   ```bash
+   cd backend
+   wrangler deploy
+   ```
+4. Configure sua chave como segredo do Worker (não vai para nenhum arquivo):
+   ```bash
+   wrangler secret put OPENAI_API_KEY
+   ```
+   (cole a chave quando solicitado).
+5. O comando `wrangler deploy` mostra a URL pública do seu Worker (algo como `https://professor-ia-proxy.SEU-USUARIO.workers.dev`).
+6. Em `speaking/speaking.js`, preencha `AI_CONFIG.endpoint` com essa URL.
+7. Suba essa alteração pro GitHub (substituindo o arquivo `speaking/speaking.js` do repositório) — pronto, o Professor IA passa a responder com GPT de verdade, com fallback automático para o modo simulado se a chamada falhar.
+
+Quer usar Claude (Anthropic) ou outro modelo em vez do GPT? A lógica é a mesma — troque a chamada dentro de `openai-proxy-worker.js` pelo endpoint da API desejada; o contrato com o frontend (`POST {messages,...} → {reply}`) continua igual.
+
+Arquitetura: **Frontend → Cloudflare Worker (protege a chave) → API da OpenAI**. A chave nunca trafega até o navegador do usuário nem aparece no GitHub.
+
+A voz (síntese de fala) continua sendo a nativa do navegador nesta configuração — só as *respostas* passam a vir de uma IA real. Se quiser evoluir para voz mais natural depois, isso é um passo separado (ex: OpenAI TTS ou ElevenLabs), me avise que eu monto.
 
 ## Publicar / hospedar
 
@@ -133,7 +154,9 @@ node_modules/
 
 ## Sobre os links do catálogo
 
-Alguns recursos do catálogo (item 20-24 do briefing original) não tinham uma URL confirmada e foram deixados com o campo `url` vazio de propósito — nenhuma URL foi inventada. Preencha-os em **Catálogo** conforme for confirmando os links corretos.
+Alguns recursos do catálogo não tinham uma URL confirmada e foram deixados com o campo `url` vazio de propósito — nenhuma URL foi inventada. Clique em **✏️ Editar** no card do recurso, em **Catálogo**, para preencher o link (ou qualquer outro campo) a qualquer momento — e **🗑️ Excluir** se quiser remover um item.
+
+Em **Meus Cursos**, os links da página inicial de "Mairo Vergara" (mairovergara.com) e "Inglês Sem Neura" (inglessemneura.com.br) já foram preenchidos — eles abrem a home do curso, não um login direto. O link de "Plataforma do Poliglota" ficou vazio de propósito: existem vários serviços com nomes parecidos ("Poliglota.org", "Instituto Poliglota" etc.) e eu não tinha certeza qual é o seu — clique em "✏️ Editar link" no card do curso pra colocar o endereço certo.
 
 ## Próximas evoluções sugeridas (não incluídas nesta primeira versão)
 

@@ -58,7 +58,7 @@
   <button class="nav-item" data-view="catalog"><span class="nav-icon">📚</span><span>Catálogo</span></button>
   <button class="nav-item" data-view="courses"><span class="nav-icon">🎓</span><span>Cursos</span></button>
   <button class="nav-item" data-view="methods"><span class="nav-icon">🧪</span><span>Métodos</span></button>
-  <button class="nav-item" data-view="vocabulary"><span class="nav-icon">🧠</span><span>Vocabulário</span></button>
+  <button class="nav-item" data-view="notebook"><span class="nav-icon">📓</span><span>Caderno</span></button>
   <button class="nav-item" data-view="progress"><span class="nav-icon">📈</span><span>Progresso</span></button>
   <a class="nav-item nav-ai" href="speaking/speaking.html" target="_blank" rel="noopener"><span class="nav-icon">🗣️</span><span>Professor IA</span></a>
   <button class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span><span>Config.</span></button>
@@ -253,29 +253,25 @@
     <div id="methods-grid" class="methods-grid"></div>
   </section>
 
-  <!-- ---------------- VOCABULÁRIO ---------------- -->
-  <section id="view-vocabulary" class="view">
+  <!-- ---------------- CADERNO ---------------- -->
+  <section id="view-notebook" class="view">
     <div class="view-header">
-      <h2>🧠 Vocabulário</h2>
-      <button class="btn btn-primary" id="btn-add-vocab">+ Nova palavra/chunk</button>
+      <h2>📓 Caderno</h2>
+      <button class="btn btn-primary" id="btn-add-note">+ Nova anotação</button>
     </div>
+    <p class="muted">Suas anotações de gramática, dicas e observações — vocabulário fica no Anki, então isso aqui é só para o resto.</p>
 
-    <div class="fcl-banner">
-      <h3>🚢 FCL / IMPO / Customer Service / Pricing</h3>
-      <p>Seu vocabulário profissional de comércio exterior e logística, priorizado em chunks — não palavras soltas.</p>
-    </div>
-
-    <div class="filters-bar" id="vocab-filters">
-      <select id="vocab-filter-language"><option value="all">Idioma: Todos</option></select>
-      <select id="vocab-filter-category" aria-label="Categoria"></select>
-      <select id="vocab-filter-status" aria-label="Status">
-        <option value="all">Status: Todos</option>
-        <option value="ativo">#ativo</option>
-        <option value="passivo">#passivo</option>
+    <div class="filters-bar" id="notebook-filters">
+      <select id="note-filter-language"><option value="all">Idioma: Todos</option></select>
+      <select id="note-filter-type" aria-label="Tipo">
+        <option value="all">Tipo: Todos</option>
+        <option value="gramatica">📚 Gramática</option>
+        <option value="dica">💡 Dica</option>
+        <option value="outro">📝 Outro</option>
       </select>
-      <input type="search" id="vocab-filter-search" placeholder="Buscar vocabulário...">
+      <input type="search" id="note-filter-search" placeholder="Buscar nas anotações...">
     </div>
-    <div id="vocabulary-list" class="vocabulary-list"></div>
+    <div id="notebook-list" class="notebook-list"></div>
   </section>
 
   <!-- ---------------- PROGRESSO ---------------- -->
@@ -591,38 +587,30 @@
   </div>
 </div>
 
-<!-- Adicionar vocabulário -->
-<div id="add-vocab-modal" class="overlay" hidden>
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-vocab-title">
-    <button class="modal-close" data-close="add-vocab-modal" aria-label="Fechar">✕</button>
-    <h3 id="add-vocab-title">+ Nova palavra/chunk</h3>
-    <form id="add-vocab-form" class="modal-form">
-      <label for="av-term">Palavra ou chunk</label>
-      <input type="text" id="av-term" required placeholder="Ex: meet the deadline">
-      <label for="av-translation">Tradução</label>
-      <input type="text" id="av-translation">
-      <label for="av-definition">Definição</label>
-      <input type="text" id="av-definition">
-      <label for="av-example">Exemplo</label>
-      <input type="text" id="av-example">
-      <label for="av-professional">Frase profissional</label>
-      <input type="text" id="av-professional">
-      <label for="av-daily">Frase cotidiana</label>
-      <input type="text" id="av-daily">
-      <label for="av-language">Idioma</label>
-      <select id="av-language" required></select>
-      <label for="av-category">Categoria</label>
-      <select id="av-category"></select>
-      <label for="av-level">Nível</label>
-      <input type="text" id="av-level" placeholder="Ex: B1">
-      <label for="av-active">Status</label>
-      <select id="av-active">
-        <option value="ativo">#ativo</option>
-        <option value="passivo" selected>#passivo</option>
+<!-- Adicionar/editar anotação do Caderno -->
+<div id="add-note-modal" class="overlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="add-note-title">
+    <button class="modal-close" data-close="add-note-modal" aria-label="Fechar">✕</button>
+    <h3 id="add-note-title">+ Nova anotação</h3>
+    <form id="add-note-form" class="modal-form">
+      <label for="an-title">Título</label>
+      <input type="text" id="an-title" required placeholder="Ex: Present Perfect x Simple Past">
+      <label for="an-language">Idioma</label>
+      <select id="an-language" required></select>
+      <label for="an-type">Tipo</label>
+      <select id="an-type">
+        <option value="gramatica">📚 Gramática</option>
+        <option value="dica">💡 Dica</option>
+        <option value="outro">📝 Outro</option>
       </select>
-      <label for="av-tags">Tags (separadas por vírgula)</label>
-      <input type="text" id="av-tags">
-      <button type="submit" class="btn btn-primary">Adicionar</button>
+      <label for="an-content">Anotação</label>
+      <textarea id="an-content" rows="6" placeholder="Escreva sua anotação, explicação ou dica..."></textarea>
+      <label for="an-tags">Tags (separadas por vírgula)</label>
+      <input type="text" id="an-tags" placeholder="ex: verbos, present-perfect">
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="an-delete" hidden>Excluir</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
     </form>
   </div>
 </div>
@@ -716,7 +704,7 @@
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="search-title">
     <button class="modal-close" data-close="search-modal" aria-label="Fechar">✕</button>
     <h3 id="search-title">🔍 Buscar</h3>
-    <input type="search" id="search-input" placeholder="Buscar em vocabulário, catálogo, métodos, cursos...">
+    <input type="search" id="search-input" placeholder="Buscar em anotações, catálogo, métodos, cursos...">
     <div id="search-results" class="search-results"></div>
   </div>
 </div>
