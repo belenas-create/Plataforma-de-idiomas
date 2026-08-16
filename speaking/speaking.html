@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Professor IA — Speaking</title>
+<meta name="description" content="Pratique conversação por voz em inglês, espanhol e outros idiomas.">
+<link rel="stylesheet" href="speaking.css">
+</head>
+<body>
+
+<div id="simulated-banner" class="simulated-banner" role="status">
+  🧪 <strong>Modo simulado (offline)</strong> — respostas geradas localmente por regras/roteiros, não por um modelo de IA real.
+  Para conversas mais naturais, configure um endpoint de IA seguro (veja o README, seção "Professor IA").
+</div>
+
+<header class="speaking-header">
+  <a href="../index.html" class="back-link" aria-label="Voltar ao painel">← Painel</a>
+  <div class="setup-bar">
+    <select id="cfg-language" aria-label="Idioma"></select>
+    <select id="cfg-level" aria-label="Nível">
+      <option value="auto">Adaptar ao meu nível</option>
+      <option>A0</option><option>A1</option><option>A2</option>
+      <option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+    </select>
+    <select id="cfg-mode" aria-label="Modo de comportamento do professor">
+      <option value="fluency">Fluency Mode</option>
+      <option value="correction">Correction Mode</option>
+      <option value="teacher">Teacher Mode</option>
+      <option value="challenge">Challenge Mode</option>
+    </select>
+    <select id="cfg-conversation-mode" aria-label="Modo de conversação">
+      <option value="livre">Conversação Livre</option>
+      <option value="professor-escolhe">Professor Escolhe</option>
+      <option value="roleplay">Roleplay</option>
+      <option value="entrevista">Entrevista</option>
+      <option value="debate">Debate</option>
+      <option value="small-talk">Small Talk</option>
+      <option value="business">Business English</option>
+      <option value="survival-spanish">Survival Spanish</option>
+    </select>
+  </div>
+  <div class="scenario-bar">
+    <span id="scenario-label" class="scenario-label">Cenário: Small Talk</span>
+    <button id="btn-new-scenario" class="btn btn-secondary">🎲 Surpreenda-me</button>
+    <button id="btn-challenge" class="btn btn-secondary">🔥 Challenge</button>
+  </div>
+</header>
+
+<main class="speaking-main">
+  <section id="setup-screen" class="setup-screen">
+    <div class="teacher-avatar">🧑‍🏫</div>
+    <h1>Professor IA</h1>
+    <p class="muted">Escolha idioma, nível e cenário acima, depois comece a conversar.</p>
+    <button id="btn-start-conversation" class="btn btn-primary btn-large">▶️ Começar conversa</button>
+  </section>
+
+  <section id="chat-screen" class="chat-screen" hidden>
+    <div class="chat-window" id="chat-window" aria-live="polite"></div>
+
+    <div class="voice-controls">
+      <button id="btn-help" class="btn btn-secondary" aria-label="Pedir ajuda">🆘 Help</button>
+      <button id="btn-mic" class="btn btn-mic" aria-label="Falar">🎙️ Falar</button>
+      <button id="btn-listen" class="btn btn-secondary" aria-label="Ouvir última resposta">🔊 Ouvir</button>
+      <button id="btn-stop-audio" class="btn btn-secondary" aria-label="Parar áudio">⏹️ Parar</button>
+    </div>
+
+    <form id="text-fallback-form" class="text-fallback-form">
+      <input type="text" id="text-fallback-input" placeholder="Ou digite sua resposta aqui...">
+      <button type="submit" class="btn btn-primary">Enviar</button>
+    </form>
+
+    <div class="chat-footer">
+      <label for="voice-rate">Velocidade da voz</label>
+      <input type="range" id="voice-rate" min="0.6" max="1.4" step="0.1" value="1">
+      <select id="voice-select" aria-label="Escolher voz"></select>
+      <button id="btn-end-conversation" class="btn btn-danger">Encerrar conversa</button>
+    </div>
+  </section>
+
+  <section id="help-panel" class="help-panel" hidden>
+    <button class="modal-close" id="btn-close-help" aria-label="Fechar">✕</button>
+    <h3>🆘 Ajuda</h3>
+    <div id="help-content"></div>
+  </section>
+
+  <section id="feedback-screen" class="feedback-screen" hidden>
+    <h1>📊 Feedback da conversa</h1>
+    <p class="muted">Estimativas geradas pela plataforma para te dar uma direção — <strong>não são uma avaliação oficial CEFR.</strong></p>
+    <div class="feedback-metrics" id="feedback-metrics"></div>
+    <div class="feedback-block">
+      <h3>✅ O que você fez bem</h3>
+      <ul id="feedback-good"></ul>
+    </div>
+    <div class="feedback-block">
+      <h3>🎯 O que melhorar</h3>
+      <ul id="feedback-improve"></ul>
+    </div>
+    <div class="feedback-block">
+      <h3>✍️ 5 frases para revisar</h3>
+      <ul id="feedback-phrases"></ul>
+    </div>
+    <div class="feedback-block">
+      <h3>🧠 5 vocabulários novos</h3>
+      <ul id="feedback-vocab"></ul>
+    </div>
+    <div class="feedback-block">
+      <h3>⚠️ Erros mais importantes</h3>
+      <ul id="feedback-errors"></ul>
+    </div>
+    <div class="feedback-block">
+      <h3>🚀 Desafio para a próxima conversa</h3>
+      <p id="feedback-challenge"></p>
+    </div>
+    <div class="modal-actions">
+      <button id="btn-new-conversation" class="btn btn-primary">Nova conversa</button>
+      <a href="../index.html" class="btn btn-secondary">Voltar ao painel</a>
+    </div>
+  </section>
+</main>
+
+<script src="speaking.js"></script>
+</body>
+</html>
