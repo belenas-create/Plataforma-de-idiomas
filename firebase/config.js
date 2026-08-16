@@ -1,4 +1,3 @@
-js
 const firebaseConfig = {
   apiKey: "AIzaSyA5HLkEBeewPsvW3URKSNZvN8O8-ANE5zo",
   authDomain: "painel-de-idiomas.firebaseapp.com",
