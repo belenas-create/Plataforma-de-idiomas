@@ -223,19 +223,6 @@ const SEED_DATA = {
       timeStudiedMin: 0,
       notes: ""
     },
-    {
-      id: "plataforma-poliglota",
-      name: "Plataforma do Poliglota",
-      language: "general",
-      url: "",
-      tags: ["curso", "idiomas"],
-      modules: [],
-      progress: 0,
-      lastLesson: "—",
-      nextLesson: "—",
-      timeStudiedMin: 0,
-      notes: ""
-    }
   ],
 
   /* ---------------------------------------------------------------------

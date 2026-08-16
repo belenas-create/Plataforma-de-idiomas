@@ -1,11 +1,15 @@
 /* ==========================================================================
    store.js — Camada de dados (Storage Abstraction Layer)
    --------------------------------------------------------------------------
-   Hoje: tudo é lido/gravado em localStorage.
-   Amanhã: quando o Firebase estiver configurado (ver firebase/config.example.js),
-   basta implementar os mesmos métodos usando Firestore e trocar
-   `Store.backend = "firestore"` — NENHUM outro arquivo precisa mudar,
-   porque app.js só fala com `Store`, nunca com localStorage diretamente.
+   localStorage é sempre a cópia local/offline. Quando o Firebase está
+   configurado E o usuário está logado (via firebase-sync.js), toda escrita
+   também é replicada no Firestore, e no login a cópia do Firestore é
+   puxada e sobrescreve a local — assim o mesmo usuário vê os mesmos dados
+   em qualquer aparelho. Sem login, ou sem Firebase configurado, tudo
+   continua funcionando 100% localmente, sem nenhum erro.
+
+   NENHUMA outra tela fala com localStorage ou com o Firestore diretamente
+   — tudo passa por este arquivo.
 
    Coleções (modelo de dados lógico — item #45 do briefing):
      languages, study_sessions, weekly_plans, resources, courses,
@@ -37,11 +41,16 @@ const Store = (() => {
     }
   }
 
-  function persistCollection(name, data) {
+  function persistCollection(name, data, opts = {}) {
     try {
       localStorage.setItem(key(name), JSON.stringify(data));
     } catch (e) {
       console.warn("Store: falha ao salvar", name, e);
+    }
+    // replica pro Firestore em segundo plano (não bloqueia a UI) — só se
+    // estiver logada e não for uma escrita que já veio do próprio Firestore
+    if (!opts.skipRemote && typeof window !== "undefined" && window.FirebaseSync && window.FirebaseSync.isSignedIn()) {
+      window.FirebaseSync.pushCollection(name, data);
     }
   }
 
@@ -236,15 +245,43 @@ const Store = (() => {
     });
   }
 
-  /* -------------------- ponto de integração Firebase (futuro) --------------
-     Quando firebase/config.example.js for preenchido e copiado para
-     firebase/config.js, um módulo firebase-store.js (a ser criado) pode
-     implementar as mesmas assinaturas (getAll, add, update, remove...) usando
-     Firestore, e este arquivo passa a delegar chamadas para lá quando
-     `backend === "firestore"`. Nenhuma tela precisa mudar.
-  --------------------------------------------------------------------------- */
+  /* -------------------- sincronização com Firebase -------------------- */
   function isFirebaseConnected() {
-    return db.settings && db.settings.firebaseConnected === true;
+    return typeof window !== "undefined" && !!window.FirebaseSync && window.FirebaseSync.isSignedIn();
+  }
+  function isFirebaseConfigured() {
+    return typeof window !== "undefined" && !!window.FirebaseSync && window.FirebaseSync.isEnabled();
+  }
+
+  /**
+   * Chamado (por app.js) sempre que o login muda para "logada".
+   * Se já existem dados na nuvem, eles substituem os locais (a nuvem manda).
+   * Se é o primeiro login (nuvem vazia), os dados locais atuais sobem.
+   * Retorna true se puxou dados existentes da nuvem, false se subiu os locais.
+   */
+  async function syncFromFirebase() {
+    if (!window.FirebaseSync || !window.FirebaseSync.isSignedIn()) return false;
+    const remote = await window.FirebaseSync.pullAll();
+    const hasRemoteData = Object.keys(remote).length > 0;
+
+    if (hasRemoteData) {
+      COLLECTIONS.forEach(name => {
+        if (remote[name] !== undefined) {
+          db[name] = remote[name];
+          persistCollection(name, db[name], { skipRemote: true });
+        }
+      });
+    } else {
+      await pushAllToFirebase();
+    }
+    return hasRemoteData;
+  }
+
+  async function pushAllToFirebase() {
+    if (!window.FirebaseSync || !window.FirebaseSync.isSignedIn()) return;
+    for (const name of COLLECTIONS) {
+      if (db[name] !== undefined) await window.FirebaseSync.pushCollection(name, db[name]);
+    }
   }
 
   return {
@@ -254,7 +291,7 @@ const Store = (() => {
     getWeekPlan, setWeekPlan, addActivityToDay, updateActivity, removeActivity, moveActivity,
     logSession, unlockBadge,
     exportAll, importAll,
-    isFirebaseConnected,
+    isFirebaseConnected, isFirebaseConfigured, syncFromFirebase, pushAllToFirebase,
     uid
   };
 })();

@@ -44,7 +44,45 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     fullRender();
   }
+
+  wireFirebaseAuth();
 });
+
+/* ============================================================
+   FIREBASE — login/logout e sincronização
+============================================================= */
+function wireFirebaseAuth(){
+  if (typeof FirebaseSync === "undefined") return; // firebase-sync.js não carregou — modo local
+  FirebaseSync.init();
+
+  $("#btn-firebase-login")?.addEventListener("click", async () => {
+    try { await FirebaseSync.signInWithGoogle(); }
+    catch (e) { toast("Não foi possível entrar: " + (e.message || e)); }
+  });
+  $("#btn-firebase-logout")?.addEventListener("click", async () => {
+    await FirebaseSync.signOut();
+    toast("Você saiu. Seus dados continuam salvos localmente neste aparelho.");
+    renderSettings();
+  });
+  $("#btn-firebase-sync-now")?.addEventListener("click", async () => {
+    toast("Sincronizando...");
+    await Store.syncFromFirebase();
+    fullRender();
+    toast("Sincronizado!");
+  });
+
+  FirebaseSync.onAuthChange(async (user) => {
+    if (user) {
+      toast("Entrando e sincronizando seus dados...");
+      const pulledExisting = await Store.syncFromFirebase();
+      fullRender();
+      $("#local-mode-banner").hidden = true;
+      toast(pulledExisting ? "Dados sincronizados da nuvem!" : "Conta conectada — seus dados locais foram enviados pra nuvem.");
+    } else {
+      renderSettings();
+    }
+  });
+}
 
 function fullRender(){
   renderHeader();
@@ -902,7 +940,8 @@ function renderCourses(){
       el("div", { class:"modal-actions" }, [
         el("button", { class:"btn btn-secondary", onclick: () => markCourseProgress(c.id) }, "+ Marcar aula concluída"),
         el("button", { class:"btn btn-secondary", onclick: () => editCourseUrl(c) }, "✏️ Editar link"),
-        c.url ? el("a", { href:c.url, target:"_blank", rel:"noopener", class:"btn btn-secondary" }, "Abrir ↗") : null
+        c.url ? el("a", { href:c.url, target:"_blank", rel:"noopener", class:"btn btn-secondary" }, "Abrir ↗") : null,
+        el("button", { class:"btn btn-danger", onclick: () => deleteCourse(c.id, c.name) }, "🗑️ Excluir")
       ])
     ]));
   });
@@ -912,6 +951,12 @@ function editCourseUrl(course){
   if (newUrl === null) return; // cancelado
   Store.update("courses", course.id, { url: newUrl.trim() });
   toast("Link do curso atualizado!");
+  renderCourses();
+}
+function deleteCourse(id, name){
+  if (!confirm(`Remover o curso "${name}" da lista? Isso não pode ser desfeito.`)) return;
+  Store.remove("courses", id);
+  toast("Curso removido.");
   renderCourses();
 }
 function markCourseProgress(courseId){
@@ -1182,10 +1227,37 @@ function renderSettings(){
   nbList.innerHTML = "";
   Store.getAll("notebooks").forEach(nb => nbList.appendChild(el("div", { class:"notebook-item" }, [
     el("span", {}, nb.name),
-    nb.url ? el("a", { href:nb.url, target:"_blank", rel:"noopener", class:"btn btn-secondary" }, "Abrir ↗") : el("span", { class:"muted" }, "sem link")
+    el("div", { class:"notebook-actions" }, [
+      el("a", { href: nb.url || NOTEBOOKLM_HOME, target:"_blank", rel:"noopener", class:"btn btn-secondary" }, nb.url ? "Abrir ↗" : "Abrir NotebookLM ↗"),
+      el("button", { class:"btn btn-secondary btn-small", onclick: () => editNotebookUrl(nb) }, "✏️")
+    ])
   ])));
 
-  $("#firebase-status").textContent = Store.isFirebaseConnected() ? "✅ Firebase conectado — dados sincronizados." : "💾 Modo local ativo. Nenhuma conta conectada.";
+  renderFirebasePanel();
+}
+const NOTEBOOKLM_HOME = "https://notebooklm.google.com/";
+function editNotebookUrl(nb){
+  const newUrl = window.prompt(`Link exato deste notebook no NotebookLM para "${nb.name}" (deixe em branco para continuar abrindo a página inicial do NotebookLM):`, nb.url || "");
+  if (newUrl === null) return; // cancelado
+  Store.update("notebooks", nb.id, { url: newUrl.trim() });
+  toast("Link do notebook atualizado!");
+  renderSettings();
+}
+
+function renderFirebasePanel(){
+  const configured = typeof FirebaseSync !== "undefined" && FirebaseSync.isEnabled();
+  const signedIn = configured && FirebaseSync.isSignedIn();
+  $("#firebase-not-configured").hidden = configured;
+  $("#firebase-signed-out").hidden = !configured || signedIn;
+  $("#firebase-signed-in").hidden = !signedIn;
+  if (signedIn) {
+    $("#firebase-status").textContent = "✅ Firebase conectado — dados sincronizados.";
+    $("#firebase-user-email").textContent = `Conectada como ${FirebaseSync.getUser().email}`;
+  } else if (configured) {
+    $("#firebase-status").textContent = "☁️ Firebase configurado — entre com Google pra sincronizar.";
+  } else {
+    $("#firebase-status").textContent = "💾 Modo local ativo. Nenhuma conta conectada.";
+  }
 }
 
 /* ============================================================

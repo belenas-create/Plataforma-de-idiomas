@@ -364,7 +364,17 @@
       <div class="settings-card">
         <h3>☁️ Firebase (sincronização entre dispositivos)</h3>
         <p class="muted" id="firebase-status">Modo local ativo. Nenhuma conta conectada.</p>
-        <p class="muted">Para sincronizar entre computador, celular e tablet, configure o Firebase — veja o <code>README.md</code>. Nenhuma chave secreta deve ficar no frontend.</p>
+        <div id="firebase-not-configured">
+          <p class="muted">Para sincronizar entre computador, celular e tablet, configure o Firebase primeiro — veja o <code>README.md</code>. Nenhuma chave secreta fica no frontend.</p>
+        </div>
+        <div id="firebase-signed-out" hidden>
+          <button class="btn btn-primary" id="btn-firebase-login">Entrar com Google</button>
+        </div>
+        <div id="firebase-signed-in" hidden>
+          <p class="muted" id="firebase-user-email"></p>
+          <button class="btn btn-secondary" id="btn-firebase-sync-now">🔄 Sincronizar agora</button>
+          <button class="btn btn-secondary" id="btn-firebase-logout">Sair</button>
+        </div>
       </div>
 
       <div class="settings-card">
@@ -725,6 +735,14 @@
 </div>
 
 <div id="toast" class="toast" hidden></div>
+
+<!-- Firebase (opcional) — se firebase/config.js não existir ainda, estes
+     scripts falham silenciosamente e a plataforma segue 100% local. -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase/config.js" onerror="console.info('firebase/config.js não encontrado — modo local (veja README.md para configurar sincronização).')"></script>
+<script src="firebase-sync.js"></script>
 
 <script src="data.js"></script>
 <script src="store.js"></script>

@@ -11,7 +11,7 @@
 
 <div id="simulated-banner" class="simulated-banner" role="status">
   🧪 <strong>Modo simulado (offline)</strong> — respostas geradas localmente por regras/roteiros, não por um modelo de IA real.
-  Para conversas mais naturais, configure um endpoint de IA seguro (veja o README, seção "Professor IA").
+  Para uma conversa com IA de verdade, toque em "🧑‍🏫 Professor IA" abaixo para abrir o ChatGPT.
 </div>
 
 <header class="speaking-header">
@@ -49,10 +49,13 @@
 
 <main class="speaking-main">
   <section id="setup-screen" class="setup-screen">
-    <div class="teacher-avatar">🧑‍🏫</div>
-    <h1>Professor IA</h1>
-    <p class="muted">Escolha idioma, nível e cenário acima, depois comece a conversar.</p>
-    <button id="btn-start-conversation" class="btn btn-primary btn-large">▶️ Começar conversa</button>
+    <div id="btn-open-chatgpt" class="chatgpt-launch" role="button" tabindex="0" aria-label="Conversar com IA real no ChatGPT">
+      <span class="teacher-avatar">🧑‍🏫</span>
+      <h1>Professor IA</h1>
+      <span class="chatgpt-hint">💬 Toque aqui para conversar com uma IA de verdade no ChatGPT (sua conta)</span>
+    </div>
+    <p class="muted">Ou, para praticar por aqui mesmo (com voz e sem sair do app, mas em modo simulado), escolha idioma, nível e cenário acima:</p>
+    <button id="btn-start-conversation" class="btn btn-secondary btn-large">▶️ Começar conversa simulada</button>
   </section>
 
   <section id="chat-screen" class="chat-screen" hidden>

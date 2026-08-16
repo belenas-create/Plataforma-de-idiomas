@@ -19,7 +19,8 @@ language-platform/
 ├── style.css
 ├── app.js               → toda a lógica do dashboard
 ├── data.js               → dados iniciais/seed (idiomas, métodos, cursos, catálogo, caderno)
-├── store.js              → camada de dados (hoje: localStorage; futuro: Firestore)
+├── store.js              → camada de dados (localStorage + sincronização com Firestore)
+├── firebase-sync.js      → autenticação (Google) e leitura/escrita no Firestore
 │
 ├── speaking/
 │   ├── speaking.html     → Professor IA (app INDEPENDENTE, abre em nova aba)
@@ -73,27 +74,47 @@ npx serve .
 | `badgesUnlocked` | Badges de gamificação leve já desbloqueadas |
 | `settings` | Preferências do usuário, onboarding, tema |
 
-Tudo isso vive hoje em `localStorage`, sob chaves `langplatform_v1::<colecao>`, gerenciado por `store.js`. Nenhuma tela fala diretamente com `localStorage` — todas passam por `Store`, então trocar o backend para Firestore no futuro não exige reescrever as telas.
+Tudo isso vive sempre em `localStorage` primeiro (cópia local/offline), gerenciado por `store.js`. Nenhuma tela fala diretamente com `localStorage` ou com o Firestore — todas passam por `Store`, que decide se replica cada escrita na nuvem (ver seção seguinte).
 
-## Configurar o Firebase (sincronização entre dispositivos) — opcional
+## Configurar o Firebase (sincronização entre dispositivos)
 
-1. Acesse [console.firebase.google.com](https://console.firebase.google.com) e crie um projeto.
-2. Ative **Authentication** (recomendado: login por e-mail/senha ou Google) e **Cloud Firestore**.
-3. Em "Configurações do projeto" → "Seus apps" → "Web", copie o objeto `firebaseConfig`.
-4. Copie `firebase/config.example.js` para `firebase/config.js` e cole seus valores.
-5. Configure as regras de segurança do Firestore (modelo já sugerido dentro de `config.example.js`) para que cada usuário só acesse os próprios dados.
-6. Implemente (ou peça para uma próxima etapa de desenvolvimento implementar) um `firebase-store.js` que reproduza as mesmas funções de `store.js` (`getAll`, `add`, `update`, `remove`, `logSession`...) usando o SDK do Firestore, e troque `backend` para `"firestore"` dentro de `store.js`.
-7. **Nunca** faça commit de `firebase/config.js` com valores reais preenchidos de forma que exponha chaves privadas de administrador — os valores do `firebaseConfig` do app Web são públicos por natureza (protegidos pelas regras do Firestore, não por serem secretos), mas Service Account keys (`.json` de admin) NUNCA devem estar no frontend nem no repositório.
+Isso já está implementado e funcionando (`firebase-sync.js` + os hooks em `store.js`) — falta só você criar o projeto Firebase e conectar. Sem fazer isso, a plataforma mostra "💾 Modo local ativo" e funciona normalmente, só que presa a um dispositivo.
 
-Até que isso esteja configurado, a plataforma mostra o aviso "💾 Modo local ativo" e continua funcionando normalmente.
+1. Acesse [console.firebase.google.com](https://console.firebase.google.com) e crie um projeto (é grátis no plano Spark, que é mais que suficiente pra uso pessoal).
+2. Vá em **Authentication** → **Sign-in method** → ative **Google** como provedor.
+3. Vá em **Firestore Database** → **Create database** → modo produção → escolha uma região (ex: `southamerica-east1`).
+4. Em **Firestore Database → Regras**, cole:
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /users/{userId}/{document=**} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+     }
+   }
+   ```
+   Isso garante que só você (autenticada) acessa os seus próprios dados.
+5. Em "Configurações do projeto" (ícone de engrenagem) → "Seus apps" → clique no ícone Web (`</>`) para registrar um app → copie o objeto `firebaseConfig` gerado.
+6. No repositório, copie `firebase/config.example.js` para um novo arquivo `firebase/config.js` e cole os valores copiados no lugar dos placeholders.
+7. Suba `firebase/config.js` pro seu repositório no GitHub (esses valores são identificadores públicos do projeto — quem protege seus dados de verdade é a regra do passo 4, não o sigilo desses valores).
+8. Abra a plataforma publicada, vá em **Configurações → Firebase** e clique em **"Entrar com Google"**.
+9. Pronto — no primeiro login, seus dados locais atuais sobem pra nuvem automaticamente. Nos próximos aparelhos onde você fizer login com a mesma conta Google, os dados da nuvem substituem os locais e ficam sincronizados dali em diante (toda alteração — sessão registrada, planner, catálogo etc. — é replicada em segundo plano).
 
-## Configurar o Professor IA com uma IA real — opcional
+**Nunca** faça commit de uma Service Account key (`.json` de admin do Firebase) — isso é diferente do `firebaseConfig` do passo 5/6 e nunca deve estar no frontend nem no repositório.
 
-Por padrão, o Professor IA (`speaking/speaking.js`) roda em **modo simulado**: respostas geradas por roteiros de cenário + regras locais, deixado bem claro na interface ("🧪 Modo simulado (offline)"). Isso evita fingir uma IA que não existe.
+## Professor IA — conversar com IA de verdade
 
-**Importante sobre contas:** a assinatura do ChatGPT (chatgpt.com) é um produto diferente da API da OpenAI (platform.openai.com) — mesmo pagando o ChatGPT Plus, isso não dá acesso à API. A boa notícia é que ambos usam o **mesmo login/conta OpenAI**: você só precisa entrar em [platform.openai.com](https://platform.openai.com), ativar cobrança por uso ali (separada da assinatura do ChatGPT) e gerar uma chave de API. O uso é cobrado por token/minuto consumido, não por mensalidade fixa.
+Por padrão, a tela inicial do Professor IA tem dois caminhos:
 
-Este projeto já vem com o backend pronto em `backend/openai-proxy-worker.js` — um Cloudflare Worker que protege sua chave (ela nunca fica no frontend nem no GitHub). Passo a passo:
+1. **🧑‍🏫 "Professor IA" (botão principal)** — abre o **ChatGPT** (chatgpt.com) numa nova aba, já com uma mensagem inicial pronta (idioma, seu nível, o modo escolhido — Fluency/Correction/Teacher/Challenge — e o cenário sorteado), usando a **sua conta ChatGPT paga**, com a voz e a desenvoltura reais do ChatGPT (inclusive o modo de voz dele, se você usar o app). Essa mensagem também é copiada para a área de transferência — caso o preenchimento automático não funcione (isso depende do ChatGPT e não é garantido), é só colar. Não precisa de nenhuma configuração — já funciona assim que você publica o site.
+2. **"▶️ Começar conversa simulada"** — continua funcionando 100% offline, com o motor de roteiros/regras local, direto na plataforma (com voz do navegador). Bom para praticar rapidinho sem sair do app.
+
+**Importante sobre contas:** a assinatura do ChatGPT (chatgpt.com) é um produto diferente da API da OpenAI (platform.openai.com) — mesmo pagando o ChatGPT Plus, isso não dá acesso à API. Ambos usam o **mesmo login/conta OpenAI**, mas são cobrados separadamente. Como o botão principal simplesmente abre o chatgpt.com no seu navegador (você loga normalmente, do jeito que já usa hoje), você não precisa mexer com API nem com chaves para essa opção.
+
+### Alternativa avançada: backend próprio (opcional, não é o caminho padrão)
+
+Se um dia você quiser que as respostas apareçam **dentro** do Professor IA (em vez de abrir o ChatGPT em outra aba) — por exemplo pra manter o histórico e o feedback automático da conversa —, dá pra conectar via API, com um pouco mais de configuração técnica. Isso já está pronto em `backend/openai-proxy-worker.js` (um Cloudflare Worker que protege sua chave, ela nunca fica no frontend nem no GitHub), mas fica desligado por padrão. Passo a passo, se quiser ativar depois:
 
 1. Crie uma chave de API em [platform.openai.com/api-keys](https://platform.openai.com/api-keys) (com billing ativado na conta).
 2. Instale a CLI da Cloudflare e faça login:
@@ -156,12 +177,14 @@ node_modules/
 
 Alguns recursos do catálogo não tinham uma URL confirmada e foram deixados com o campo `url` vazio de propósito — nenhuma URL foi inventada. Clique em **✏️ Editar** no card do recurso, em **Catálogo**, para preencher o link (ou qualquer outro campo) a qualquer momento — e **🗑️ Excluir** se quiser remover um item.
 
-Em **Meus Cursos**, os links da página inicial de "Mairo Vergara" (mairovergara.com) e "Inglês Sem Neura" (inglessemneura.com.br) já foram preenchidos — eles abrem a home do curso, não um login direto. O link de "Plataforma do Poliglota" ficou vazio de propósito: existem vários serviços com nomes parecidos ("Poliglota.org", "Instituto Poliglota" etc.) e eu não tinha certeza qual é o seu — clique em "✏️ Editar link" no card do curso pra colocar o endereço certo.
+Em **Meus Cursos**, os links da página inicial de "Mairo Vergara" (mairovergara.com) e "Inglês Sem Neura" (inglessemneura.com.br) já foram preenchidos — eles abrem a home do curso, não um login direto. Cada card de curso também tem **✏️ Editar link** e **🗑️ Excluir**, caso você queira ajustar ou remover algum. O curso "Plataforma do Poliglota" foi removido desta versão (havia ambiguidade sobre qual serviço era — existem vários com nomes parecidos, "Poliglota.org", "Instituto Poliglota" etc. — e você preferiu remover em vez de adivinhar); se o item correspondente ainda existir no seu Catálogo, é só excluí-lo por lá também.
+
+Em **Configurações → Notebook LM**, cada atalho sem link próprio configurado agora abre a página inicial do NotebookLM (notebooklm.google.com) em vez de mostrar "sem link" — assim você já pode entrar e criar/abrir o notebook certo. Depois de criar o notebook, clique no ✏️ ao lado do nome pra colar a URL exata dele (assim o atalho passa a abrir aquele notebook específico direto).
 
 ## Próximas evoluções sugeridas (não incluídas nesta primeira versão)
 
-- Implementar `firebase-store.js` de fato (hoje é só o ponto de integração preparado).
-- Autenticação multiusuário real.
+- Login por e-mail/senha como alternativa ao Google (hoje só tem Google Sign-In).
+- Resolução de conflito quando o mesmo usuário edita em dois aparelhos ao mesmo tempo offline (hoje quem sincronizar por último vence).
 - Drag-and-drop mais refinado entre semanas diferentes no planner.
 - Análise de pronúncia mais sofisticada no Professor IA (hoje as métricas de speaking são estimativas heurísticas locais, não uma avaliação fonética real).
 - Exportar plano semanal em PDF/calendário (.ics).

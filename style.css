@@ -162,6 +162,7 @@ label{ font-size: .85rem; font-weight: 600; color: var(--text-muted); display:bl
 .btn-secondary{ background: var(--surface-alt); color: var(--text); }
 .btn-secondary:hover{ background: var(--border); }
 .btn-danger{ background: var(--danger-soft, #fde7e2); color: var(--danger); }
+.btn-small{ padding: 6px 10px; font-size:.8rem; }
 .file-label{ cursor:pointer; }
 
 /* ---------------- Today view ---------------- */
@@ -343,7 +344,8 @@ label{ font-size: .85rem; font-weight: 600; color: var(--text-muted); display:bl
 .settings-grid{ display:grid; gap:14px; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); }
 .settings-card{ background: var(--surface); border-radius: var(--radius-md); padding: 16px; border:1px solid var(--border); }
 .settings-card h3{ font-size:1rem; }
-.notebook-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+.notebook-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:.88rem; gap:8px; }
+.notebook-actions{ display:flex; align-items:center; gap:6px; }
 
 /* ---------------- Modals ----------------
    IMPORTANT: [hidden] and .overlay have equal CSS specificity, and author

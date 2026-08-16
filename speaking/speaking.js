@@ -17,11 +17,16 @@
 "use strict";
 
 /* ============================================================
-   PONTO DE INTEGRAÇÃO — IA real (opcional)
-   Deixe endpoint === "" para usar o motor simulado local.
-   Quando você tiver um backend (proxy seguro guardando a chave da IA),
-   preencha a URL abaixo. O app enviará POST { messages, language, level,
-   mode, scenario } e espera receber JSON { reply: "texto da IA" }.
+   PONTO DE INTEGRAÇÃO — IA real (opcional, avançado)
+   Deixe endpoint === "" para usar o motor simulado local (padrão).
+   Se um dia você quiser um backend seguro (proxy escondendo uma chave de
+   API) em vez de abrir o ChatGPT direto, veja backend/openai-proxy-worker.js
+   e a seção "Professor IA com IA real" do README — aí é só preencher a
+   URL aqui. O app enviará POST { messages, language, level, mode,
+   scenario } e espera receber JSON { reply: "texto da IA" }.
+   Hoje, o botão principal do Professor IA ("🧑‍🏫 Professor IA" na tela
+   inicial) simplesmente abre o ChatGPT numa nova aba — veja
+   openInChatGPT() mais abaixo.
 ============================================================= */
 const AI_CONFIG = {
   endpoint: "" // ex: "https://meu-backend.exemplo.com/api/speaking"
@@ -213,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
   populateVoices();
   wireSetup();
   wireChat();
+  wireChatGPTLaunch();
   pickRandomScenario();
 });
 
@@ -421,7 +427,7 @@ function checkCorrections(text){
   return null;
 }
 
-/* ---------- Motor de resposta: IA real (se configurada) ou simulada ---------- */
+/* ---------- Motor de resposta: IA real via backend (se configurada) ou simulada ---------- */
 async function getAIResponse(){
   if (AI_CONFIG.endpoint) {
     try {
@@ -444,6 +450,44 @@ async function getAIResponse(){
     }
   }
   return simulateReply();
+}
+
+/* ---------- Botão "Professor IA" — abre uma conversa pronta no ChatGPT ---------- */
+function buildChatGPTPrompt(){
+  const langName = state.language === "spanish" ? "Spanish" : "English";
+  const modeLabel = {
+    fluency: "Don't stop to correct every mistake — just keep the conversation natural and flowing, and only mention 1-2 corrections briefly if needed.",
+    correction: "Gently correct my important mistakes as we go, in a short aside, then keep the conversation moving.",
+    teacher: "When you correct a mistake, briefly explain the grammar rule in one sentence, then continue the conversation.",
+    challenge: "Push me with more advanced vocabulary and harder, more open-ended follow-up questions as we go."
+  }[state.mode] || "";
+  const levelLabel = state.level === "auto" ? "figure out my level from how I write and adjust gradually" : `my level is ${state.level} on the CEFR scale`;
+  const scenarioLabel = state.scenario
+    ? `Let's do a roleplay: the scenario is "${state.scenario.name}". You play the ${state.scenario.counterpart || "other person"}${state.scenario.role ? `, and I play the ${state.scenario.role}` : ""}. Start in character.`
+    : "";
+  return [
+    `Let's practice a spoken ${langName} conversation. I'm a Brazilian Portuguese speaker practicing ${langName} — please reply only in ${langName} (with an occasional quick translation in parentheses only for tricky words).`,
+    `Assume ${levelLabel}.`,
+    modeLabel,
+    scenarioLabel,
+    `Keep your replies short — 1 to 4 sentences, like a real spoken exchange — and always end with a question so I keep talking. Start the conversation now.`
+  ].filter(Boolean).join(" ");
+}
+function wireChatGPTLaunch(){
+  const btn = $("#btn-open-chatgpt");
+  if (!btn) return;
+  const launch = () => {
+    const prompt = buildChatGPTPrompt();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(prompt).catch(() => {});
+    }
+    window.open(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`, "_blank", "noopener");
+    toastLike(`Abrindo o ChatGPT numa nova aba, já com a conversa sugerida (idioma, nível e cenário escolhidos aqui). Se o texto não vier preenchido automaticamente — isso não é garantido pela OpenAI —, já copiei pra sua área de transferência, é só colar (Ctrl+V ou ⌘V) e enviar.`);
+  };
+  btn.addEventListener("click", launch);
+  btn.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); launch(); }
+  });
 }
 function simulateReply(){
   state.turnIndex++;
