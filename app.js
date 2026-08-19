@@ -24,6 +24,7 @@ const ui = {
 ============================================================= */
 document.addEventListener("DOMContentLoaded", () => {
   Store.init();
+  hydrateTodayPickerFromSettings();
   applyTheme();
   renderLocalBanner();
   wireGlobalEvents();
@@ -67,6 +68,7 @@ function wireFirebaseAuth(){
   $("#btn-firebase-sync-now")?.addEventListener("click", async () => {
     toast("Sincronizando...");
     await Store.syncFromFirebase();
+    hydrateTodayPickerFromSettings();
     fullRender();
     toast("Sincronizado!");
   });
@@ -75,6 +77,7 @@ function wireFirebaseAuth(){
     if (user) {
       toast("Entrando e sincronizando seus dados...");
       const pulledExisting = await Store.syncFromFirebase();
+      hydrateTodayPickerFromSettings();
       fullRender();
       $("#local-mode-banner").hidden = true;
       toast(pulledExisting ? "Dados sincronizados da nuvem!" : "Conta conectada — seus dados locais foram enviados pra nuvem.");
@@ -149,6 +152,11 @@ function isoWeekDates(weekId){
     d.setUTCDate(monday.getUTCDate()+i);
     return d;
   });
+}
+function fmtDateUTC(d){
+  // formata um Date "ancorado em UTC" (como os de isoWeekDates) sem deixar
+  // a conversão de fuso horário do navegador empurrar pro dia anterior
+  return `${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}/${d.getUTCFullYear()}`;
 }
 function weekIdOffset(offset){
   const d = new Date();
@@ -309,6 +317,17 @@ function selectPicker(kind, value, btnEl){
     if (sel) sel.classList.add("selected");
   }
   renderTodaySuggestions();
+  persistTodayPicker();
+}
+/* Lembra tempo/energia/idioma/habilidade escolhidos — salva nas configurações
+   (via Store), então também sincroniza pelo Firebase, e não precisa escolher
+   de novo toda vez que abrir o app. */
+function persistTodayPicker(){
+  Store.updateSettings({ todayPicker: { ...ui.todayPicker } });
+}
+function hydrateTodayPickerFromSettings(){
+  const saved = Store.getSettings().todayPicker;
+  if (saved) Object.assign(ui.todayPicker, saved);
 }
 
 function renderToday(){
@@ -316,12 +335,16 @@ function renderToday(){
   $("#consistency-message").textContent = consistencyMessage();
   renderHeader();
 
-  // pré-seleciona idioma principal se nada escolhido
+  // pré-seleciona idioma principal se nada escolhido (e nada foi restaurado das configurações)
   if (!ui.todayPicker.language) {
     const primary = Store.getAll("languages").find(l => l.status === "primary");
     if (primary) ui.todayPicker.language = primary.id;
   }
+  // reflete no visual (chips destacados) o que foi restaurado das configurações/nuvem
   $$("#language-picker .chip").forEach(c => c.classList.toggle("selected", c.dataset.lang === ui.todayPicker.language));
+  $$("#time-picker .chip").forEach(c => c.classList.toggle("selected", c.dataset.time === ui.todayPicker.time));
+  $$("#energy-picker .chip").forEach(c => c.classList.toggle("selected", c.dataset.energy === ui.todayPicker.energy));
+  $$("#skill-picker .chip").forEach(c => c.classList.toggle("selected", c.dataset.skill === ui.todayPicker.skill));
 
   renderTodaySuggestions();
   renderDashboard();
@@ -636,7 +659,7 @@ function wireWeek(){
 function renderWeek(){
   const weekId = weekIdOffset(ui.weekOffset);
   const dates = isoWeekDates(weekId);
-  $("#week-label").textContent = `${weekId} (${dates[0].toLocaleDateString('pt-BR')} – ${dates[6].toLocaleDateString('pt-BR')})`;
+  $("#week-label").textContent = `${weekId} (${fmtDateUTC(dates[0])} – ${fmtDateUTC(dates[6])})`;
   const plan = Store.getWeekPlan(weekId);
   const grid = $("#week-grid");
   grid.innerHTML = "";
@@ -645,7 +668,7 @@ function renderWeek(){
       ondrop:(e)=>{ e.preventDefault(); col.classList.remove("drag-over"); const actId = e.dataTransfer.getData("text/plain"); const fromDay = e.dataTransfer.getData("fromDay");
         if (fromDay && fromDay !== day) { Store.moveActivity(weekId, fromDay, day, actId); renderWeek(); } } });
     col.appendChild(el("h4", {}, [
-      `${DAY_LABELS[day]} · ${dates[i].getDate()}/${dates[i].getMonth()+1}`,
+      `${DAY_LABELS[day]} · ${dates[i].getUTCDate()}/${dates[i].getUTCMonth()+1}`,
       el("button", { class:"day-add-btn", "aria-label":"Adicionar atividade", onclick:() => openActivityModal(day, weekId) }, "+")
     ]));
     const list = el("div", { class:"day-activities" });
@@ -681,7 +704,7 @@ function openActivityModal(day, weekId, activity){
   fillSelectWithResources($("#aa-content"));
   fillSelectWithMethods($("#aa-method"));
   $("#aa-day").value = day;
-  $("#aa-id").value = activity ? activity.id : "";
+  $("#aa-id").value = (activity && activity.id) ? activity.id : "";
   $("#add-activity-title").textContent = activity ? "Editar atividade" : `Nova atividade — ${DAY_LABELS[day]}`;
   $("#aa-delete").hidden = !activity;
   if (activity) {

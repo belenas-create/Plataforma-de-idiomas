@@ -336,13 +336,13 @@ const SEED_DATA = {
    * PLANO SEMANAL DE EXEMPLO (semana atual)
    * ------------------------------------------------------------------- */
   weeklyPlanTemplate: {
-    monday:    [{ language: "english", menu: "entrada", skill: "listening", content: "", method: "comprehensible-input-output", duration: 15, status: "planejado", note: "Listening + Speaking" }],
-    tuesday:   [{ language: "english", menu: "prato-principal", skill: "speaking", content: "res-mairo", method: "roleplay", duration: 30, status: "planejado", note: "Mairo + Speaking" }],
-    wednesday: [{ language: "english", menu: "snack", skill: "vocabulary", content: "res-anki", method: "anki-srs", duration: 5, status: "planejado", note: "Vocabulary" }],
-    thursday:  [{ language: "english", menu: "entrada", skill: "listening", content: "", method: "shadowing", duration: 15, status: "planejado", note: "Listening + Shadowing" }],
-    friday:    [{ language: "english", menu: "prato-principal", skill: "writing", content: "", method: "comprehensible-input-output", duration: 30, status: "planejado", note: "Writing + Customer Service" }],
-    saturday:  [{ language: "english", menu: "menu-principal", skill: "mix", content: "", method: "roleplay", duration: 60, status: "planejado", note: "Aula longa + conversação" }],
-    sunday:    [{ language: "english", menu: "sobremesa", skill: "listening", content: "res-lyricstraining", method: "", duration: 5, status: "planejado", note: "Conteúdo leve + revisão" }]
+    monday:    [{ id: "seed-act-monday", language: "english", menu: "entrada", skill: "listening", content: "", method: "comprehensible-input-output", duration: 15, status: "planejado", note: "Listening + Speaking" }],
+    tuesday:   [{ id: "seed-act-tuesday", language: "english", menu: "prato-principal", skill: "speaking", content: "res-mairo", method: "roleplay", duration: 30, status: "planejado", note: "Mairo + Speaking" }],
+    wednesday: [{ id: "seed-act-wednesday", language: "english", menu: "snack", skill: "vocabulary", content: "res-anki", method: "anki-srs", duration: 5, status: "planejado", note: "Vocabulary" }],
+    thursday:  [{ id: "seed-act-thursday", language: "english", menu: "entrada", skill: "listening", content: "", method: "shadowing", duration: 15, status: "planejado", note: "Listening + Shadowing" }],
+    friday:    [{ id: "seed-act-friday", language: "english", menu: "prato-principal", skill: "writing", content: "", method: "comprehensible-input-output", duration: 30, status: "planejado", note: "Writing + Customer Service" }],
+    saturday:  [{ id: "seed-act-saturday", language: "english", menu: "menu-principal", skill: "mix", content: "", method: "roleplay", duration: 60, status: "planejado", note: "Aula longa + conversação" }],
+    sunday:    [{ id: "seed-act-sunday", language: "english", menu: "sobremesa", skill: "listening", content: "res-lyricstraining", method: "", duration: 5, status: "planejado", note: "Conteúdo leve + revisão" }]
   },
 
   /* ---------------------------------------------------------------------

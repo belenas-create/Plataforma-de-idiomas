@@ -83,6 +83,7 @@ const Store = (() => {
     db.studySessions = loadCollection("studySessions") || [];
     // plano semanal — chave por weekId (ex: "2026-W33")
     db.weeklyPlans = loadCollection("weeklyPlans") || {};
+    migrateWeeklyPlanIds();
     // badges já desbloqueadas
     db.badgesUnlocked = loadCollection("badgesUnlocked") || [];
     // configurações do usuário / onboarding
@@ -113,6 +114,30 @@ const Store = (() => {
     COLLECTIONS.forEach(name => {
       if (db[name] !== undefined) persistCollection(name, db[name]);
     });
+  }
+
+  /* -------------------- migração: atividades sem id --------------------
+     Versões antigas do template semanal semeavam atividades sem `id`.
+     Isso quebrava silenciosamente editar/excluir (o campo virava a string
+     "undefined" no formulário, que não batia com nenhum id real). Aqui a
+     gente conserta qualquer atividade já salva (local ou vinda da nuvem)
+     que ainda esteja sem id, uma única vez. */
+  function migrateWeeklyPlanIds() {
+    if (!db.weeklyPlans) return;
+    let changed = false;
+    Object.keys(db.weeklyPlans).forEach(weekId => {
+      const plan = db.weeklyPlans[weekId];
+      if (!plan) return;
+      Object.keys(plan).forEach(day => {
+        (plan[day] || []).forEach(act => {
+          if (act && !act.id) {
+            act.id = uid("act");
+            changed = true;
+          }
+        });
+      });
+    });
+    if (changed) persistCollection("weeklyPlans", db.weeklyPlans);
   }
 
   /* -------------------- helpers de semana -------------------- */
@@ -271,6 +296,8 @@ const Store = (() => {
           persistCollection(name, db[name], { skipRemote: true });
         }
       });
+      // conserta (e re-sincroniza) qualquer atividade antiga vinda da nuvem sem id
+      migrateWeeklyPlanIds();
     } else {
       await pushAllToFirebase();
     }
